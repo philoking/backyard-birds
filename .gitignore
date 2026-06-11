@@ -1,0 +1,25 @@
+# Secrets / host-specific config (must be placed on the server, never committed)
+bird-call-app/.env
+birdlistener/.env
+birdlistener/config.yaml
+weatherlistener/.env
+
+# Node / Next.js
+node_modules/
+.next/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local datastores / caches
+**/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Claude Code session/memory data (local only)
+.claude/
+
+.DS_Store

@@ -1,0 +1,72 @@
+# Unified stack for the bird-call system.
+#
+#   birdlistener  — Python/BirdNET service. Pulls RTSP audio from the LAN
+#                   cameras (host networking) and writes detections + recent
+#                   audio clips to TimescaleDB.
+#   weatherlistener — Python service. Ingests Tempest weather-station UDP
+#                   broadcasts (port 50222) into TimescaleDB.
+#   app           — Next.js dashboard. Reads the same TimescaleDB and serves
+#                   the UI on :3009.
+#
+# The services share only the database (see docs/schema.md for the contract).
+# Bring the whole system up with:  docker compose up -d --build
+#
+# Secrets live outside git and must exist on the host before `up`:
+#   birdlistener/config.yaml     RTSP + DB credentials (see config.yaml.example)
+#   bird-call-app/.env           PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE
+#   weatherlistener/.env         PG* (+ TEMPEST_TOKEN for backfill)
+services:
+  birdlistener:
+    build: ./birdlistener
+    image: birdlistener:latest
+    container_name: birdlistener
+    restart: unless-stopped
+    # Host networking keeps RTSP pulls to LAN cameras simple.
+    network_mode: host
+    volumes:
+      - ./birdlistener/config.yaml:/app/config.yaml:ro
+    environment:
+      - TZ=${TZ:-UTC}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+
+  weatherlistener:
+    build: ./weatherlistener
+    image: weatherlistener:latest
+    container_name: weatherlistener
+    restart: unless-stopped
+    # Host networking is required to receive the hub's UDP broadcasts on :50222.
+    network_mode: host
+    env_file:
+      - ./weatherlistener/.env
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+  app:
+    build: ./bird-call-app
+    image: bird-call-app:latest
+    container_name: bird-call-app
+    restart: unless-stopped
+    ports:
+      - "3009:3000"
+    env_file:
+      - ./bird-call-app/.env
+    environment:
+      APP_TZ: ${APP_TZ:-America/Los_Angeles}
+      NODE_ENV: production
+      BIRD_CACHE_DIR: /app/data/birds
+    volumes:
+      - bird-cache:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/recent?limit=1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  # Reuse the photo cache created under the old standalone bird-call-app
+  # project so cached bird images carry over instead of re-downloading.
+  bird-cache:
+    external: true
+    name: bird-call-app_bird-cache

@@ -1,0 +1,74 @@
+# BirdListener configuration.
+# Copy this file to `config.yaml` and edit for your environment.
+
+# --- Global analysis settings ---------------------------------------------
+
+# Minimum BirdNET confidence required to log a detection (0.0 - 1.0).
+# 0.7 is a good balance; lower values catch more species but produce more
+# false positives.
+min_confidence: 0.7
+
+# BirdNET sensitivity (0.5 - 1.5). Higher is more lenient.
+sensitivity: 1.0
+
+# Overlap between consecutive 3-second analysis windows, in seconds.
+# 0.0 = non-overlapping, 1.5 = 50% overlap. Overlap catches calls that
+# straddle a window boundary but roughly doubles CPU work at 1.5s.
+overlap_seconds: 0.0
+
+# --- Recent-call audio clips -----------------------------------------------
+#
+# Store a short audio clip (the analyzed 3-second window) for recent detections
+# so the dashboard's species page can play back what was heard. Clips are kept
+# as the newest `clip_keep` per species in the database and pruned automatically.
+
+# Set false to disable clip capture entirely.
+save_clips: true
+
+# How many clips to retain per species.
+clip_keep: 5
+
+# Minimum seconds between stored clips for the *same* species (per camera).
+# Prevents a noisy bird from filling every slot within a few seconds. Set 0 to
+# store literally the last `clip_keep` detections.
+clip_min_interval_seconds: 30.0
+
+# Padding added before and after the 3-second detection window when saving a
+# clip, so calls near a window edge aren't cut off. 1.5 + 3 + 1.5 = ~6s clips.
+clip_pad_before_seconds: 1.5
+clip_pad_after_seconds: 1.5
+
+# Default lat/lon for species filtering (improves accuracy dramatically).
+# BirdNET uses location + date to restrict its candidate species list.
+# Remove this block to analyze against the global species list.
+default_location:
+  latitude: 0.0      # set to your location's latitude
+  longitude: 0.0     # set to your location's longitude
+
+# --- Database --------------------------------------------------------------
+
+database:
+  host: 192.168.1.10       # TimescaleDB / PostgreSQL host
+  port: 5432
+  dbname: birdlistener
+  user: tsdbadmin
+  password: ""             # or set DB_PASSWORD environment variable
+
+# --- Cameras ---------------------------------------------------------------
+#
+# Amcrest RTSP URLs typically look like:
+#   rtsp://<user>:<pass>@<ip>:554/cam/realmonitor?channel=1&subtype=0
+# `subtype=0` is the main stream, `subtype=1` is the sub-stream (lower
+# bitrate; audio is still present on most models and is fine for BirdNET).
+#
+# Tip: URL-encode special characters in the password (@ = %40, etc).
+
+cameras:
+  - name: backyard
+    rtsp_url: "rtsp://admin:CHANGEME@192.168.1.100:554/cam/realmonitor?channel=1&subtype=1"
+    # Optionally override per camera:
+    # latitude: 0.0
+    # longitude: 0.0
+
+  - name: frontdoor
+    rtsp_url: "rtsp://admin:CHANGEME@192.168.1.101:554/cam/realmonitor?channel=1&subtype=1"

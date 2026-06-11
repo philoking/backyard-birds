@@ -1,0 +1,10 @@
+birdnetlib>=0.17.0
+psycopg2-binary>=2.9
+# tflite-runtime is the CPU-only TensorFlow Lite interpreter used by birdnetlib.
+# Pinning it explicitly guarantees a CPU-only install (no CUDA, no full TF).
+tflite-runtime>=2.14.0
+numpy>=1.24,<2.0
+pyyaml>=6.0
+pydantic>=2.0
+librosa>=0.10.0
+resampy>=0.4.2
