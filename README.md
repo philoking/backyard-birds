@@ -1,4 +1,4 @@
-# bird-app
+# Backyard Birds
 
 Monorepo for a backyard bird-call monitoring system. RTSP cameras with
 microphones around the yard are continuously analyzed by **BirdNET**; every
